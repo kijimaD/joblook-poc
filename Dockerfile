@@ -1,7 +1,4 @@
-FROM python:alpine AS s2lc
-
-# Get latest root certificates
-RUN apk add --no-cache ca-certificates tzdata && update-ca-certificates
+FROM python AS s2lc
 
 # Install the required packages
 RUN pip install --no-cache-dir redis flower flask flask-socketio

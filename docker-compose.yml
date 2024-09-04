@@ -9,7 +9,8 @@ services:
     command: -A tasks worker -l info -E
     user: nobody
     volumes:
-      - ./examples:/data
+      - ./src:/data
+    working_dir: /data
     environment:
       CELERY_BROKER_URL: redis://redis
       CELERY_RESULT_BACKEND: redis://redis
@@ -27,7 +28,7 @@ services:
     build: .
     command: celery -A tasks flower --loglevel=info
     volumes:
-      - ./examples:/data
+      - ./src:/data
     working_dir: /data
     ports:
       - 5555:5555

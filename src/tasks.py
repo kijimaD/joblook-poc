@@ -55,7 +55,7 @@ def longjob(self):
     task_id = self.request.id  # task_idにアクセス
 
     process = subprocess.Popen(
-        "top",
+        "./progress_test.sh",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,  # 出力をバイナリではなく文字列で読み取る
