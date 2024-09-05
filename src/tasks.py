@@ -9,7 +9,9 @@ import subprocess
 from celery import Celery
 from celery import current_task
 
+# ================
 # celery
+
 logging.getLogger('celery').setLevel(logging.ERROR)
 app = Celery("tasks",
              broker=os.environ.get('CELERY_BROKER_URL'),
@@ -17,6 +19,29 @@ app = Celery("tasks",
              )
 app.conf.accept_content = ['pickle', 'json', 'msgpack', 'yaml']
 app.conf.worker_send_task_events = True
+
+# ジョブを変更したら、ワーカープロセスを再起動する必要がある
+@app.task(bind=True)
+def run(self, cmd):
+    task_id = self.request.id  # task_idにアクセス
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,  # 出力をバイナリではなく文字列で読み取る
+        shell=True, # ターミナルに入力するコマンド文字列がそのまま入る
+    )
+    # リアルタイムに、ジョブプロセスの標準出力をワーカープロセスの標準出力に書き出す
+    for line in process.stdout:
+        logger.info(line.strip(), extra={'task_id': task_id})
+    for line in process.stderr:
+        logger.info(line.strip(), extra={'task_id': task_id})
+
+    process.wait()
+
+# ================
+# ロガー
 
 class JsonFormatter(logging.Formatter):
     def __init__(self, *args, **kwargs):
@@ -34,6 +59,11 @@ class JsonFormatter(logging.Formatter):
                 log_record[field] = getattr(record, field)
         return json.dumps(log_record, ensure_ascii=False)
 
+# celery既存のロガーセットアップを無視する
+@celery.signals.setup_logging.connect
+def on_celery_setup_logging(**kwargs):
+    pass
+
 # カスタムロガー
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,29 +71,3 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 console_handler.setFormatter(JsonFormatter(extra_fields=['task_id']))
 logger.addHandler(console_handler)
-
-# celery既存のロガーセットアップを無視する
-@celery.signals.setup_logging.connect
-def on_celery_setup_logging(**kwargs):
-    pass
-
-# 投入テスト
-# python -m "from tasks import run; run.delay()"
-# ジョブを変更したら、ワーカープロセスを再起動する必要がある
-@app.task(bind=True)
-def run(self):
-    task_id = self.request.id  # task_idにアクセス
-
-    process = subprocess.Popen(
-        "./progress_test.sh",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,  # 出力をバイナリではなく文字列で読み取る
-        shell=True, # ターミナルに入力するコマンド文字列がそのまま入る
-    )
-    for line in process.stdout:
-        logger.info(line.strip(), extra={'task_id': task_id})
-    for line in process.stderr:
-        logger.info(line.strip(), extra={'task_id': task_id})
-
-    process.wait()

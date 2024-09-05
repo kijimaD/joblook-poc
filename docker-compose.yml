@@ -13,6 +13,9 @@ services:
     volumes:
       - ./src:/data
     working_dir: /data
+    environment:
+      CELERY_BROKER_URL: redis://redis
+      CELERY_RESULT_BACKEND: redis://redis
     ports:
       - 8888:8888
 

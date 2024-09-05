@@ -1,5 +1,5 @@
 from flask import Flask
-import os
+from tasks import run
 
 app = Flask(__name__)
 
@@ -9,7 +9,6 @@ def root():
 
 @app.route('/enqueue', methods=['GET'])
 def enqueue():
-    os.system('ls')
-    return "executed!"
+    run.delay("ls")
 
-# docker compose exec worker /bin/sh -c 'python -c "from tasks import longjob; longjob.delay()"'
+    return "enqueued!"
