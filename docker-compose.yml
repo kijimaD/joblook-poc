@@ -9,7 +9,7 @@ services:
     build:
       context: .
       target: python
-    command: flask run --host=0.0.0.0 --port=8888
+    command: python app.py
     volumes:
       - ./src:/data
       - ./fluentd/log:/log
