@@ -2,6 +2,7 @@ from tasks import run
 from flask import Flask, request, jsonify, render_template_string
 from flask_socketio import SocketIO, emit
 import os
+import json
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -17,7 +18,7 @@ def root():
 def index():
     return render_template_string('''
         <h2>Log</h2><span>task_id: </span><span id="task-id"></span>
-        <p id="progress-text" style="background-color: black; color: white; height: 60%; width: 100%;"></p>
+        <pre id="progress-text" style="background-color: black; color: white; height: 60%; width: 100%;"></pre>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
         <script>
@@ -26,10 +27,22 @@ def index():
             const taskID = document.getElementById('task-id');
             taskID.textContent = task_id;
 
-            const socket = io();
+            const progressText = document.getElementById('progress-text');
 
+            fetch('http://localhost:8888/permlog?task_id='+task_id)
+              .then(response => {
+                // 行ごとのJSONなので、全体としては普通の文字列
+                return response.text()
+              })
+              .then(data => {
+                progressText.innerHTML = data + "<br>";
+              })
+              .catch(error => {
+                console.error(error);
+              });
+
+            const socket = io();
             socket.on(task_id, function(data) {
-                const progressText = document.getElementById('progress-text');
                 progressText.innerHTML += data + "<br>";
             });
         </script>
@@ -53,10 +66,18 @@ def permlog():
     # MEMO: ログファイル名の規則はfluentdで定義されている
     filename = os.path.join("/log", f"worker_tagged.{task_id}.log")
     f = open(filename, 'r')
-    log = f.read()
+    raw = f.read()
     f.close()
 
-    return log
+    messages = []
+    for line in raw.splitlines():
+        try:
+            jsondata = json.loads(line)
+            messages.append(jsondata['message'])
+        except json.JSONDecodeError:
+            print(f"Invalid JSON format: {line.strip()}")
+
+    return "\n".join(messages)
 
 @app.route('/sync', methods=['POST'])
 def sync():
