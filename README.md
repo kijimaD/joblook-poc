@@ -8,6 +8,8 @@
 
 ![images](./system.drawio.svg)
 
+## 検証
+
 立ち上げる。
 ```shell
 $ docker compose up -d
@@ -37,3 +39,16 @@ joblook-poc-fluentd-1  | {"timestamp":"2024-09-04 13:45:10,843","level":"INFO","
 joblook-poc-fluentd-1  | {"timestamp":"2024-09-04 13:45:10,946","level":"INFO","message":"hello 9","task_id":"ad4a9d2d-2aa2-43d7-87cd-efa7fc779e69"}
 joblook-poc-fluentd-1  | {"timestamp":"2024-09-04 13:45:11,048","level":"INFO","message":"hello 10","task_id":"ad4a9d2d-2aa2-43d7-87cd-efa7fc779e69"}
 ```
+
+## TODO: インターフェース
+
+- タスク投入(command string) -> task_id string
+- 永続ログ取得(task_id string) -> log string
+- ログ受信およびブロードキャスト(task_id string) -> log string
+  - fluentd --リクエスト--> flask
+- WebSocket接続(task_id string) -> log string
+
+0. タスクを投入する
+0. 永続ログを取得する
+0. WebSocket接続する
+0. WebSocketから受信する

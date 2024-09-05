@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED=1 PYTHONHASHSEED=random PYTHONDONTWRITEBYTECODE=1
 # ENV PYTHONPATH ${FLOWER_DATA_DIR}
 # WORKDIR $FLOWER_DATA_DIR
 
-FROM fluent/fluentd:v1.16.2-debian-1.0 AS fluentd
+FROM fluent/fluentd:v1.17.1-debian-1.0 AS fluentd
 
 USER root
 RUN gem clean
