@@ -1,10 +1,14 @@
 version: '3'
 services:
   redis:
+    container_name: redis
     image: redis:alpine
 
   worker:
-    build: .
+    container_name: worker
+    build:
+      context: .
+      target: worker
     entrypoint: celery
     command: -A tasks worker -l info -E
     user: nobody
@@ -25,7 +29,10 @@ services:
         fluentd-async-connect: "true"
 
   flower:
-    build: .
+    container_name: flower
+    build:
+      context: .
+      target: worker
     command: celery -A tasks flower --loglevel=info
     volumes:
       - ./src:/data
@@ -41,7 +48,11 @@ services:
       - redis
 
   fluentd:
-    image: fluent/fluentd:v1.16.2-debian-1.0
+    container_name: fluentd
+    build:
+      context: .
+      target: fluentd
+    # image: fluent/fluentd:v1.16.2-debian-1.0
     volumes:
       - ./fluentd:/fluentd/etc
     ports:

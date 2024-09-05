@@ -1,4 +1,4 @@
-FROM python AS s2lc
+FROM python AS worker
 
 # Install the required packages
 RUN pip install --no-cache-dir redis flower flask flask-socketio
@@ -11,3 +11,11 @@ ENV PYTHONUNBUFFERED=1 PYTHONHASHSEED=random PYTHONDONTWRITEBYTECODE=1
 # ENV FLOWER_DATA_DIR /data
 # ENV PYTHONPATH ${FLOWER_DATA_DIR}
 # WORKDIR $FLOWER_DATA_DIR
+
+FROM fluent/fluentd:v1.16.2-debian-1.0 AS fluentd
+
+USER root
+RUN gem clean
+RUN fluent-gem install fluent-plugin-rewrite-tag-filter
+
+USER fluent
