@@ -7,10 +7,9 @@ app = Flask(__name__)
 def root():
     return "{'status': 'OK'}"
 
-@app.route('/exec', methods=['GET'])
-def exec():
+@app.route('/enqueue', methods=['GET'])
+def enqueue():
     os.system('ls')
     return "executed!"
 
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=8888)
+# docker compose exec worker /bin/sh -c 'python -c "from tasks import longjob; longjob.delay()"'

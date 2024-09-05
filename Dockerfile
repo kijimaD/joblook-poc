@@ -1,4 +1,4 @@
-FROM python AS worker
+FROM python AS python
 
 # Install the required packages
 RUN pip install --no-cache-dir redis flower flask flask-socketio
