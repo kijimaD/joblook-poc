@@ -48,10 +48,10 @@ def on_celery_setup_logging(**kwargs):
     pass
 
 # 投入テスト
-# python -m "from tasks import longjob; longjob.delay()"
+# python -m "from tasks import run; run.delay()"
 # ジョブを変更したら、ワーカープロセスを再起動する必要がある
 @app.task(bind=True)
-def longjob(self):
+def run(self):
     task_id = self.request.id  # task_idにアクセス
 
     process = subprocess.Popen(

@@ -17,7 +17,7 @@ $ docker compose up -d
 
 ジョブを投入する。
 ```shell
-$ docker compose exec worker /bin/sh -c 'python -c "from tasks import longjob; longjob.delay()"'
+$ docker compose exec worker /bin/sh -c 'python -c "from tasks import run; run.delay()"'
 ```
 
 flowerで投入されているのを確認する。
