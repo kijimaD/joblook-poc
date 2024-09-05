@@ -1,14 +1,21 @@
-from flask import Flask
 from tasks import run
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def root():
-    return "{'status': 'OK'}"
+    data = {
+        "status": "OK",
+    }
+    return jsonify(data)
 
-@app.route('/enqueue', methods=['GET'])
+@app.route('/enqueue', methods=['POST'])
 def enqueue():
-    run.delay("ls")
-
-    return "enqueued!"
+    json = request.get_json()
+    cmd = json['cmd']
+    result = run.delay(cmd)
+    data = {
+        "task_id": result.id,
+    }
+    return jsonify(data)

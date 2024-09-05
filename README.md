@@ -4,7 +4,7 @@
 - ブラウザ上でタスクをトリガーしたい
 - ブラウザ上で進捗や実行結果を見たい
 
-に気づいた。汎用的でシンプルな方法を探索する。
+に気づいた。汎用的でシンプルな方法を探索する。探索であって、実運用は考慮されていない。
 
 ![images](./system.drawio.svg)
 
@@ -49,6 +49,7 @@ joblook-poc-fluentd-1  | {"timestamp":"2024-09-04 13:45:11,048","level":"INFO","
 - WebSocket接続(task_id string) -> log string
 
 0. タスクを投入する
+  - `curl -X POST -H "Content-Type: application/json" -d "{\"cmd\" : \"ls -al\"}" localhost:8888/enqueue`
 0. 永続ログを取得する
 0. WebSocket接続する
 0. WebSocketから受信する
