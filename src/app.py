@@ -19,22 +19,50 @@ def root():
     }
     return jsonify(data)
 
-@app.route('/task')
-def task():
+@app.route('/tasks', methods=['GET'])
+def tasks():
     return render_template_string('''
-        <span>task_id: </span><span id="task-id"></span>
+        <ul id="task-list"></ul>
+
+        <script>
+            const taskList = document.getElementById('task-list');
+            fetch('http://localhost:5555/api/tasks')
+              .then((response) => {
+                return response.json()
+              })
+              .then((data) => {
+                Object.keys(data).forEach((key) => {
+                  uuid = data[key]['uuid'];
+                  state = data[key]['state'];
+                  args = data[key]['args'];
+                  timestamp = data[key]['timestamp'];
+                  dateTime = new Date(timestamp * 1000);
+                  dateString = dateTime.toLocaleDateString('ja-JP')
+                  timeString = dateTime.toLocaleTimeString('ja-JP')
+                  taskList.innerHTML += `<li><code>${state}</code><code>${args}</code><a href="/task?task_id=${uuid}">${uuid}</a><code>${dateString} ${timeString}</code></li>`;
+                })
+              })
+              .catch(error => {
+                console.error(error);
+              });
+        </script>
+    ''')
+
+@app.route('/task', methods=['GET'])
+def task():
+    req = request.args
+    task_id = req.get("task_id")
+
+    return render_template_string('''
+        <span>task_id: {{ task_id }}</span>
         <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 90%;overflow: scroll;padding: 1em;"></pre>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
         <script>
-            const url = new URL(window.location.href);
-            task_id = url.searchParams.get('task_id');
-            const taskID = document.getElementById('task-id');
-            taskID.textContent = task_id;
-
             const progressText = document.getElementById('progress-text');
 
-            fetch('http://localhost:8888/permlog?task_id='+task_id)
+            // TODO: ブラウザ側でリクエストすると、URLの扱いが面倒である。バックエンドで取っておくとか、どうにかする
+            fetch('http://localhost:8888/permlog?task_id={{task_id}}')
               .then(response => {
                 // 行ごとのJSONなので、全体としては普通の文字列
                 return response.text()
@@ -47,11 +75,12 @@ def task():
               });
 
             const socket = io();
-            socket.on(task_id, function(data) {
+            socket.on("{{task_id}}", function(data) {
                 progressText.innerHTML += data + "<br>";
+                progressText.scrollTop = progressText.scrollHeight;
             });
         </script>
-    ''')
+    ''', task_id=task_id)
 
 # タスク投入エンドポイント
 @app.route('/enqueue', methods=['POST'])
