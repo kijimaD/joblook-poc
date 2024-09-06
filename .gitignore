@@ -1,1 +1,2 @@
 fluentd/log/*.log
+fluentd/log/\$\{tag\}/

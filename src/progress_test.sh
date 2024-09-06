@@ -1,7 +1,7 @@
 #!/bin/bash
 
-for i in {1..100}
+for i in {1..1000000}
 do
     echo hello $i
-    sleep 0.1
+    sleep 1
 done

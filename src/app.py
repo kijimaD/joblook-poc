@@ -18,7 +18,7 @@ def root():
 def index():
     return render_template_string('''
         <h2>Log</h2><span>task_id: </span><span id="task-id"></span>
-        <pre id="progress-text" style="background-color: black; color: white; height: 60%; width: 100%;"></pre>
+        <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 100%;overflow: scroll;"></pre>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
         <script>
@@ -44,6 +44,7 @@ def index():
             const socket = io();
             socket.on(task_id, function(data) {
                 progressText.innerHTML += data + "<br>";
+                progressText.scrollTop = progressText.scrollHeight;
             });
         </script>
     ''')
@@ -79,13 +80,25 @@ def permlog():
 
     return "\n".join(messages)
 
+# 混じるバグがある
+# チャンネルをtask_idにしてるから混じらないんじゃないのか?
 @app.route('/sync', methods=['POST'])
 def sync():
-    json = request.get_json()
-    log = json['log']
-    task_id = json['task_id']
+    raw = request.data.decode('utf-8')
 
-    socketio.emit(task_id, log)
+    first_line = raw.split('\n')[0]
+    jsondata = json.loads(first_line)
+    task_id = jsondata['task_id']
+
+    messages = [];
+    for line in raw.splitlines():
+        try:
+            jsondata = json.loads(line)
+            messages.append(jsondata['message'])
+        except json.JSONDecodeError:
+            print(f"Invalid JSON format: {line.strip()}")
+
+    socketio.emit(task_id, "\n".join(messages))
 
     return jsonify({'status': 'OK'})
 
