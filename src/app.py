@@ -22,6 +22,7 @@ def root():
 @app.route('/tasks', methods=['GET'])
 def tasks():
     return render_template_string('''
+        <h2>Tasks</h2>
         <ul id="task-list"></ul>
 
         <script>
@@ -39,7 +40,16 @@ def tasks():
                   dateTime = new Date(timestamp * 1000);
                   dateString = dateTime.toLocaleDateString('ja-JP')
                   timeString = dateTime.toLocaleTimeString('ja-JP')
-                  taskList.innerHTML += `<li><code>${state}</code><code>${args}</code><a href="/task?task_id=${uuid}">${uuid}</a><code>${dateString} ${timeString}</code></li>`;
+                  taskList.innerHTML += "<table><tbody>"
+                  taskList.innerHTML += `
+                  <tr>
+                    <td><code>${state}<code></td>
+                    <td><code>${dateString} ${timeString}<code></td>
+                    <td><code><a href="/task?task_id=${uuid}">${uuid}</a><code></td>
+                    <td><code>${args}<code></td>
+                  </tr>
+                  `;
+                  taskList.innerHTML += "</tbody></table>"
                 })
               })
               .catch(error => {
