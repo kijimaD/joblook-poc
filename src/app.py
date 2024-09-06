@@ -19,11 +19,11 @@ def root():
     }
     return jsonify(data)
 
-@app.route('/front')
-def index():
+@app.route('/task')
+def task():
     return render_template_string('''
-        <h2>Log</h2><span>task_id: </span><span id="task-id"></span>
-        <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 100%;overflow: scroll;"></pre>
+        <span>task_id: </span><span id="task-id"></span>
+        <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 90%;overflow: scroll;padding: 1em;"></pre>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
         <script>
@@ -49,7 +49,6 @@ def index():
             const socket = io();
             socket.on(task_id, function(data) {
                 progressText.innerHTML += data + "<br>";
-                progressText.scrollTop = progressText.scrollHeight;
             });
         </script>
     ''')

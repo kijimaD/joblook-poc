@@ -53,7 +53,7 @@ joblook-poc-fluentd-1  | {"timestamp":"2024-09-04 13:45:11,048","level":"INFO","
 0. 永続ログを取得する
   - `curl localhost:8888/permlog?task_id=1d128c57-0066-4e0f-b16f-109d8b8fbb0e`
 0. フロントでWebSocket接続する
-  - http://localhost:8888/front?task_id=1d128c57-0066-4e0f-b16f-109d8b8fbb0e
+  - http://localhost:8888/task?task_id=1d128c57-0066-4e0f-b16f-109d8b8fbb0e
 0. fluentdがリアルタイムログを送信する
   - `curl -X POST -H "Content-Type: application/json" -d "{\"log\" : \"hello\", \"task_id\": \"1d128c57-0066-4e0f-b16f-109d8b8fbb0e\"}" localhost:8888/sync`
 0. WebSocketから受信する
