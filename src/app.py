@@ -14,10 +14,9 @@ socketio = SocketIO(app)
 
 @app.route('/', methods=['GET'])
 def root():
-    data = {
+    return jsonify({
         "status": "OK",
-    }
-    return jsonify(data)
+    })
 
 @app.route('/tasks', methods=['GET'])
 def tasks():
@@ -62,6 +61,8 @@ def tasks():
 def task():
     req = request.args
     task_id = req.get("task_id")
+    if task_id is None:
+            return jsonify({'message': 'parameter `task_id` is required!'}, 400)
 
     return render_template_string('''
         <span>task_id: {{ task_id }}</span>
@@ -102,6 +103,7 @@ def enqueue():
     return jsonify({'task_id': result.id})
 
 # 永続ログ取得エンドポイント
+# 返り値はJSONではない
 @app.route('/permlog', methods=['GET'])
 def permlog():
     req = request.args
@@ -118,8 +120,8 @@ def permlog():
         try:
             jsondata = json.loads(line)
             messages.append(jsondata['message'])
-        except json.JSONDecodeError:
-            print(f"Invalid JSON format: {line.strip()}")
+        except:
+            return jsonify({'message': f"Invalid JSON format: {line.strip()}"})
 
     return "\n".join(messages)
 
