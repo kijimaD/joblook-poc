@@ -9,7 +9,7 @@ services:
     build:
       context: .
       target: python
-    command: python app.py
+    command: bash -c "chmod -R 777 /log && python app.py"
     volumes:
       - ./src:/data
       - ./fluentd/log:/log
@@ -25,8 +25,7 @@ services:
     build:
       context: .
       target: python
-    entrypoint: celery
-    command: -A tasks worker -l info -E
+    command: bash -c "celery -A tasks worker -l info -E"
     user: nobody
     volumes:
       - ./src:/data

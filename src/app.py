@@ -1,8 +1,10 @@
 from tasks import run
-from flask import Flask, request, jsonify, render_template_string
+from utils import get_fluent_logfile, get_fluent_message
+from flask import Flask, request, jsonify, render_template_string, Response
 from flask_socketio import SocketIO, emit
 import os
 import json
+import requests
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -26,7 +28,7 @@ def tasks():
 
         <script>
             const taskList = document.getElementById('task-list');
-            fetch('http://localhost:5555/api/tasks')
+            fetch('/flower/api/tasks') // リバースプロキシURL
               .then((response) => {
                 return response.json()
               })
@@ -63,41 +65,37 @@ def task():
     task_id = req.get("task_id")
     if task_id is None:
             return jsonify({'message': 'parameter `task_id` is required!'}, 400)
+    rawlog = get_fluent_logfile(task_id)
+    initial_msg = get_fluent_message(rawlog)
 
     return render_template_string('''
-        <span>task_id: {{ task_id }}</span>
-        <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 90%;overflow: scroll;padding: 1em;"></pre>
+        <a id="flower-url">{{ task_id }}</a>
+        <pre id="progress-text" style="background-color: black; color: white; height: 90%; width: 90%;overflow: scroll;padding: 1em;">{{ initial_msg }}<br></pre>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
         <script>
+            const flowerURL = document.getElementById('flower-url');
+            flowerURL.href = `http://${location.hostname}:5555/task/{{ task_id }}`;
+
             const progressText = document.getElementById('progress-text');
-
-            // TODO: ブラウザ側でリクエストすると、URLの扱いが面倒である。バックエンドで取っておくとか、どうにかする
-            fetch('http://localhost:8888/permlog?task_id={{task_id}}')
-              .then(response => {
-                // 行ごとのJSONなので、全体としては普通の文字列
-                return response.text()
-              })
-              .then(data => {
-                progressText.innerHTML = data + "<br>";
-              })
-              .catch(error => {
-                console.error(error);
-              });
-
             const socket = io();
-            socket.on("{{task_id}}", function(data) {
+            socket.on("{{ task_id }}", function(data) {
                 progressText.innerHTML += data + "<br>";
                 progressText.scrollTop = progressText.scrollHeight;
             });
         </script>
-    ''', task_id=task_id)
+    ''', task_id=task_id, initial_msg=initial_msg)
 
 # タスク投入エンドポイント
 @app.route('/enqueue', methods=['POST'])
 def enqueue():
-    json = request.get_json()
-    cmd = json['cmd']
+    cmd = ""
+
+    try:
+      json = request.get_json()
+      cmd = json['cmd']
+    except Exception as e:
+      return jsonify({'message': f"parameter invalid {e}"}), 400
 
     result = run.delay(cmd)
     return jsonify({'task_id': result.id})
@@ -108,22 +106,9 @@ def enqueue():
 def permlog():
     req = request.args
     task_id = req.get("task_id")
+    rawlog = get_fluent_logfile(task_id)
 
-    # MEMO: ログファイル名の規則はfluentdで定義されている
-    filename = os.path.join("/log", f"worker_tagged.{task_id}.log")
-    f = open(filename, 'r')
-    raw = f.read()
-    f.close()
-
-    messages = []
-    for line in raw.splitlines():
-        try:
-            jsondata = json.loads(line)
-            messages.append(jsondata['message'])
-        except:
-            return jsonify({'message': f"Invalid JSON format: {line.strip()}"})
-
-    return "\n".join(messages)
+    return get_fluent_message(rawlog)
 
 # ログ受信およびブロードキャストエンドポイント
 # syncエンドポイントには、すべてのタスクIDが送られてくる。IDごとのチャンネルに送信する
@@ -140,6 +125,27 @@ def sync():
             print(f"Invalid JSON format: {line.strip()}")
 
     return jsonify({'status': 'OK'})
+
+@app.route('/flower/<path:path>', methods=["GET", "POST", "PUT", "DELETE"])
+def flower_proxy(path):
+    BACKEND_URL = 'http://flower:5555'
+    # フロントエンドサーバーから受け取ったリクエストをそのままflowerに転送
+    url = f"{BACKEND_URL}/{path}"
+
+    # クライアントのリクエストに基づいてバックエンドにリクエストを送る
+    if request.method == "GET":
+        resp = requests.get(url, headers=request.headers, params=request.args)
+    elif request.method == "POST":
+        resp = requests.post(url, headers=request.headers, json=request.get_json())
+    elif request.method == "PUT":
+        resp = requests.put(url, headers=request.headers, json=request.get_json())
+    elif request.method == "DELETE":
+        resp = requests.delete(url, headers=request.headers)
+    else:
+        return Response("Method not supported", status=405)
+
+    # バックエンドのレスポンスをそのままクライアントに返す
+    return Response(resp.content, status=resp.status_code, headers=dict(resp.headers))
 
 @socketio.on('connect')
 def handle_connect():

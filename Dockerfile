@@ -1,7 +1,7 @@
 FROM python AS python
 
 # Install the required packages
-RUN pip install --no-cache-dir redis flower flask flask-socketio
+RUN pip install --no-cache-dir redis flower flask flask-socketio pytest requests
 
 # PYTHONUNBUFFERED: Force stdin, stdout and stderr to be totally unbuffered. (equivalent to `python -u`)
 # PYTHONHASHSEED: Enable hash randomization (equivalent to `python -R`)
